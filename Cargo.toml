@@ -1,0 +1,11 @@
+[package]
+name = "actix_collections"
+version = "0.1.0"
+authors = ["hjiayz <hjiayz@hotmail.com>"]
+repository = "https://github.com/hjiayz/actix_collections"
+description = "collections actor"
+license = "GPL-3.0"
+keywords = ["actix","BTreeMap", "BTreeSet", "BinaryHeap", "HashMap", "HashSet", "LinkedList", "VecDeque"]
+
+[dependencies]
+actix = "0.7"
