@@ -1,5 +1,7 @@
 extern crate actix;
+extern crate multimap;
 use actix::prelude::*;
+use multimap::MultiMap;
 use std::cmp::Eq;
 use std::cmp::Ord;
 use std::collections::{BTreeMap, BTreeSet, BinaryHeap, HashMap, HashSet, LinkedList, VecDeque};
@@ -221,6 +223,14 @@ impl<T: 'static + Ord> Handler<Len> for ActixCollections<BinaryHeap<T>> {
     }
 }
 
+impl<K: 'static + Eq + Hash, T: 'static> Handler<Len> for ActixCollections<MultiMap<K, T>> {
+    type Result = usize;
+
+    fn handle(&mut self, _msg: Len, _: &mut Context<Self>) -> Self::Result {
+        self.0.len()
+    }
+}
+
 pub struct Contains<V>(V);
 
 impl<V> actix::Message for Contains<V> {
@@ -280,6 +290,14 @@ impl<V: 'static + Ord + Eq> Handler<Contains<V>> for ActixCollections<BTreeSet<V
 
     fn handle(&mut self, msg: Contains<V>, _: &mut Context<Self>) -> Self::Result {
         self.0.contains(&msg.0)
+    }
+}
+
+impl<K: 'static + Hash + Eq, V: 'static> Handler<Contains<K>> for ActixCollections<MultiMap<K, V>> {
+    type Result = bool;
+
+    fn handle(&mut self, msg: Contains<K>, _: &mut Context<Self>) -> Self::Result {
+        self.0.contains_key(&msg.0)
     }
 }
 
@@ -361,6 +379,18 @@ where
     type Result = ();
     fn handle(&mut self, msg: Insert<(), V>, _: &mut Context<Self>) -> Self::Result {
         self.0.insert(msg.value);
+    }
+}
+
+impl<K, V> Handler<Insert<K, V>> for ActixCollections<MultiMap<K, V>>
+where
+    K: 'static + Eq + Hash,
+    V: Clone + Default + 'static,
+{
+    type Result = ();
+
+    fn handle(&mut self, msg: Insert<K, V>, _: &mut Context<Self>) -> Self::Result {
+        self.0.insert(msg.key, msg.value);
     }
 }
 
@@ -450,6 +480,27 @@ where
     }
 }
 
+pub struct RemoveVec<K, V> {
+    key: K,
+    value: PhantomData<V>,
+}
+
+impl<K, V: 'static> actix::Message for RemoveVec<K, V> {
+    type Result = Option<Vec<V>>;
+}
+
+impl<K, V> Handler<RemoveVec<K, V>> for ActixCollections<MultiMap<K, V>>
+where
+    K: 'static + Eq + Hash,
+    V: Clone + Default + 'static,
+{
+    type Result = Option<Vec<V>>;
+
+    fn handle(&mut self, msg: RemoveVec<K, V>, _: &mut Context<Self>) -> Self::Result {
+        self.0.remove(&msg.key)
+    }
+}
+
 pub struct Get<K, V> {
     key: K,
     value: PhantomData<V>,
@@ -505,6 +556,27 @@ where
     }
 }
 
+pub struct GetVec<K, V> {
+    key: K,
+    value: PhantomData<V>,
+}
+
+impl<K, V: 'static> actix::Message for GetVec<K, V> {
+    type Result = Option<Vec<V>>;
+}
+
+impl<K, V> Handler<GetVec<K, V>> for ActixCollections<MultiMap<K, V>>
+where
+    K: 'static + Eq + Hash,
+    V: Clone + Default + 'static,
+{
+    type Result = Option<Vec<V>>;
+
+    fn handle(&mut self, msg: GetVec<K, V>, _: &mut Context<Self>) -> Self::Result {
+        self.0.get_vec(&msg.key).cloned()
+    }
+}
+
 pub fn push<V>(v: V) -> Push<V> {
     Push(v)
 }
@@ -548,8 +620,22 @@ pub fn remove<K, V>(k: K) -> Remove<K, V> {
     }
 }
 
+pub fn remove_vec<K, V>(k: K) -> RemoveVec<K, V> {
+    RemoveVec {
+        key: k,
+        value: PhantomData,
+    }
+}
+
 pub fn get<K, V>(k: K) -> Get<K, V> {
     Get {
+        key: k,
+        value: PhantomData,
+    }
+}
+
+pub fn get_vec<K, V>(k: K) -> GetVec<K, V> {
+    GetVec {
         key: k,
         value: PhantomData,
     }
