@@ -9,4 +9,3 @@ keywords = ["actix","BTreeMap", "BTreeSet", "BinaryHeap", "HashMap", "HashSet", 
 
 [dependencies]
 actix = "0.7"
-multimap = "0.4"
