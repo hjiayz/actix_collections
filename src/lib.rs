@@ -1,7 +1,7 @@
 extern crate actix;
 mod multimap;
 use actix::prelude::*;
-use multimap::MultiMap;
+pub use multimap::MultiMap;
 use std::cmp::Eq;
 use std::cmp::Ord;
 use std::collections::{BTreeMap, BTreeSet, BinaryHeap, HashMap, HashSet, LinkedList, VecDeque};
