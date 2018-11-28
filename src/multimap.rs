@@ -9,6 +9,9 @@ impl<K: Ord, V: Ord> Default for BTreeMultiMap<K, V> {
 }
 
 impl<K: Ord, V: Ord> BTreeMultiMap<K, V> {
+    pub fn len(&self) -> usize {
+        self.0.len()
+    }
     pub fn insert(&mut self, key: K, value: V) -> bool {
         if self.0.contains_key(&key) {
             return self.0.get_mut(&key).unwrap().insert(value);
@@ -48,6 +51,9 @@ impl<K: Hash + Eq, V: Hash + Eq> Default for HashMultiMap<K, V> {
 }
 
 impl<K: Hash + Eq, V: Hash + Eq> HashMultiMap<K, V> {
+    pub fn len(&self) -> usize {
+        self.0.len()
+    }
     pub fn insert(&mut self, key: K, value: V) -> bool {
         if self.0.contains_key(&key) {
             return self.0.get_mut(&key).unwrap().insert(value);

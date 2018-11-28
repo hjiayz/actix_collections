@@ -224,6 +224,24 @@ impl<T: 'static + Ord> Handler<Len> for ActixCollections<BinaryHeap<T>> {
     }
 }
 
+impl<K: 'static + Ord, V: 'static + Ord> Handler<Len> for ActixCollections<BTreeMultiMap<K, V>> {
+    type Result = usize;
+
+    fn handle(&mut self, _msg: Len, _: &mut Context<Self>) -> Self::Result {
+        self.0.len()
+    }
+}
+
+impl<K: 'static + Hash + Eq, V: 'static + Hash + Eq> Handler<Len>
+    for ActixCollections<HashMultiMap<K, V>>
+{
+    type Result = usize;
+
+    fn handle(&mut self, _msg: Len, _: &mut Context<Self>) -> Self::Result {
+        self.0.len()
+    }
+}
+
 pub struct Contains<V>(V);
 
 impl<V> actix::Message for Contains<V> {
@@ -346,7 +364,7 @@ where
 impl<K, V> Handler<Insert<K, V>> for ActixCollections<HashMap<K, V>>
 where
     K: 'static + Eq + Hash,
-    V: Clone + Default + 'static,
+    V: Clone + 'static,
 {
     type Result = ();
 
@@ -357,7 +375,7 @@ where
 
 impl<V> Handler<Insert<(), V>> for ActixCollections<HashSet<V>>
 where
-    V: Clone + Default + Eq + Hash + 'static,
+    V: Clone + Eq + Hash + 'static,
 {
     type Result = ();
     fn handle(&mut self, msg: Insert<(), V>, _: &mut Context<Self>) -> Self::Result {
@@ -368,7 +386,7 @@ where
 impl<K, V> Handler<Insert<K, V>> for ActixCollections<BTreeMap<K, V>>
 where
     K: 'static + Ord,
-    V: Clone + Default + 'static,
+    V: Clone + 'static,
 {
     type Result = ();
 
@@ -379,7 +397,7 @@ where
 
 impl<V> Handler<Insert<(), V>> for ActixCollections<BTreeSet<V>>
 where
-    V: Clone + Default + Ord + 'static,
+    V: Clone + Ord + 'static,
 {
     type Result = ();
     fn handle(&mut self, msg: Insert<(), V>, _: &mut Context<Self>) -> Self::Result {
@@ -422,7 +440,7 @@ impl<K, V: 'static> actix::Message for Remove<K, V> {
 
 impl<V> Handler<Remove<usize, V>> for ActixCollections<Vec<V>>
 where
-    V: Clone + Default + 'static,
+    V: Clone + 'static,
 {
     type Result = Option<V>;
 
@@ -436,7 +454,7 @@ where
 
 impl<V> Handler<Remove<usize, V>> for ActixCollections<VecDeque<V>>
 where
-    V: Clone + Default + 'static,
+    V: Clone + 'static,
 {
     type Result = Option<V>;
 
@@ -448,7 +466,7 @@ where
 impl<K, V> Handler<Remove<K, V>> for ActixCollections<HashMap<K, V>>
 where
     K: 'static + Eq + Hash,
-    V: Clone + Default + 'static,
+    V: Clone + 'static,
 {
     type Result = Option<V>;
 
@@ -459,7 +477,7 @@ where
 
 impl<V> Handler<Remove<V, V>> for ActixCollections<HashSet<V>>
 where
-    V: Clone + Default + Eq + Hash + 'static,
+    V: Clone + Eq + Hash + 'static,
 {
     type Result = Option<V>;
     fn handle(&mut self, msg: Remove<V, V>, _: &mut Context<Self>) -> Self::Result {
@@ -474,7 +492,7 @@ where
 impl<K, V> Handler<Remove<K, V>> for ActixCollections<BTreeMap<K, V>>
 where
     K: 'static + Ord,
-    V: Clone + Default + 'static,
+    V: Clone + 'static,
 {
     type Result = Option<V>;
 
@@ -485,7 +503,7 @@ where
 
 impl<V> Handler<Remove<V, V>> for ActixCollections<BTreeSet<V>>
 where
-    V: Clone + Default + Ord + 'static,
+    V: Clone + Ord + 'static,
 {
     type Result = Option<V>;
     fn handle(&mut self, msg: Remove<V, V>, _: &mut Context<Self>) -> Self::Result {
@@ -549,7 +567,7 @@ impl<K, V: 'static> actix::Message for Get<K, V> {
 
 impl<V> Handler<Get<usize, V>> for ActixCollections<Vec<V>>
 where
-    V: Clone + Default + 'static,
+    V: Clone + 'static,
 {
     type Result = Option<V>;
 
@@ -560,7 +578,7 @@ where
 
 impl<V> Handler<Get<usize, V>> for ActixCollections<VecDeque<V>>
 where
-    V: Clone + Default + 'static,
+    V: Clone + 'static,
 {
     type Result = Option<V>;
 
@@ -572,7 +590,7 @@ where
 impl<K, V> Handler<Get<K, V>> for ActixCollections<HashMap<K, V>>
 where
     K: 'static + Eq + Hash,
-    V: Clone + Default + 'static,
+    V: Clone + 'static,
 {
     type Result = Option<V>;
 
@@ -584,7 +602,7 @@ where
 impl<K, V> Handler<Get<K, V>> for ActixCollections<BTreeMap<K, V>>
 where
     K: 'static + Ord,
-    V: Clone + Default + 'static,
+    V: Clone + 'static,
 {
     type Result = Option<V>;
 
