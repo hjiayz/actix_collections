@@ -2,6 +2,12 @@ use std::collections::{BTreeMap, BTreeSet};
 
 pub struct MultiMap<K, V>(BTreeMap<K, BTreeSet<V>>);
 
+impl<K: Ord, V: Ord> Default for MultiMap<K, V> {
+    fn default() -> Self {
+        MultiMap(BTreeMap::new())
+    }
+}
+
 impl<K: Ord, V: Ord> MultiMap<K, V> {
     pub fn insert(&mut self, key: K, value: V) -> bool {
         if self.0.contains_key(&key) {
