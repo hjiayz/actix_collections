@@ -1,7 +1,8 @@
 extern crate actix;
 mod multimap;
 use actix::prelude::*;
-pub use multimap::MultiMap;
+pub use multimap::BTreeMultiMap;
+pub use multimap::HashMultiMap;
 use std::cmp::Eq;
 use std::cmp::Ord;
 use std::collections::{BTreeMap, BTreeSet, BinaryHeap, HashMap, HashSet, LinkedList, VecDeque};
@@ -285,7 +286,19 @@ impl<V: 'static + Ord + Eq> Handler<Contains<V>> for ActixCollections<BTreeSet<V
     }
 }
 
-impl<K: 'static + Ord, V: 'static + Ord> Handler<Contains<K>> for ActixCollections<MultiMap<K, V>> {
+impl<K: 'static + Ord, V: 'static + Ord> Handler<Contains<K>>
+    for ActixCollections<BTreeMultiMap<K, V>>
+{
+    type Result = bool;
+
+    fn handle(&mut self, msg: Contains<K>, _: &mut Context<Self>) -> Self::Result {
+        self.0.contains_key(&msg.0)
+    }
+}
+
+impl<K: 'static + Hash + Eq, V: 'static + Hash + Eq> Handler<Contains<K>>
+    for ActixCollections<HashMultiMap<K, V>>
+{
     type Result = bool;
 
     fn handle(&mut self, msg: Contains<K>, _: &mut Context<Self>) -> Self::Result {
@@ -374,10 +387,22 @@ where
     }
 }
 
-impl<K, V> Handler<Insert<K, V>> for ActixCollections<MultiMap<K, V>>
+impl<K, V> Handler<Insert<K, V>> for ActixCollections<BTreeMultiMap<K, V>>
 where
     K: 'static + Ord,
     V: Ord + 'static,
+{
+    type Result = ();
+
+    fn handle(&mut self, msg: Insert<K, V>, _: &mut Context<Self>) -> Self::Result {
+        self.0.insert(msg.key, msg.value);
+    }
+}
+
+impl<K, V> Handler<Insert<K, V>> for ActixCollections<HashMultiMap<K, V>>
+where
+    K: 'static + Hash + Eq,
+    V: Hash + Eq + 'static,
 {
     type Result = ();
 
@@ -481,10 +506,26 @@ impl<K, V: 'static> actix::Message for RemoveMultiMap<K, V> {
     type Result = Option<V>;
 }
 
-impl<K, V> Handler<RemoveMultiMap<K, V>> for ActixCollections<MultiMap<K, V>>
+impl<K, V> Handler<RemoveMultiMap<K, V>> for ActixCollections<BTreeMultiMap<K, V>>
 where
     K: 'static + Ord,
     V: Ord + 'static,
+{
+    type Result = Option<V>;
+
+    fn handle(&mut self, msg: RemoveMultiMap<K, V>, _: &mut Context<Self>) -> Self::Result {
+        if self.0.remove(&msg.key, &msg.value) {
+            Some(msg.value)
+        } else {
+            None
+        }
+    }
+}
+
+impl<K, V> Handler<RemoveMultiMap<K, V>> for ActixCollections<HashMultiMap<K, V>>
+where
+    K: 'static + Hash + Eq,
+    V: Hash + Eq + 'static,
 {
     type Result = Option<V>;
 
@@ -552,23 +593,44 @@ where
     }
 }
 
-pub struct GetMultiMap<K, V> {
+pub struct GetBTreeMultiMap<K, V> {
     key: K,
     value: PhantomData<V>,
 }
 
-impl<K, V: 'static> actix::Message for GetMultiMap<K, V> {
+impl<K, V: 'static> actix::Message for GetBTreeMultiMap<K, V> {
     type Result = Option<BTreeSet<V>>;
 }
 
-impl<K, V> Handler<GetMultiMap<K, V>> for ActixCollections<MultiMap<K, V>>
+impl<K, V> Handler<GetBTreeMultiMap<K, V>> for ActixCollections<BTreeMultiMap<K, V>>
 where
     K: 'static + Ord,
     V: Ord + Clone + 'static,
 {
     type Result = Option<BTreeSet<V>>;
 
-    fn handle(&mut self, msg: GetMultiMap<K, V>, _: &mut Context<Self>) -> Self::Result {
+    fn handle(&mut self, msg: GetBTreeMultiMap<K, V>, _: &mut Context<Self>) -> Self::Result {
+        self.0.get(&msg.key).cloned()
+    }
+}
+
+pub struct GetHashMultiMap<K, V> {
+    key: K,
+    value: PhantomData<V>,
+}
+
+impl<K, V: 'static> actix::Message for GetHashMultiMap<K, V> {
+    type Result = Option<HashSet<V>>;
+}
+
+impl<K, V> Handler<GetHashMultiMap<K, V>> for ActixCollections<HashMultiMap<K, V>>
+where
+    K: 'static + Hash + Eq,
+    V: Hash + Eq + Clone + 'static,
+{
+    type Result = Option<HashSet<V>>;
+
+    fn handle(&mut self, msg: GetHashMultiMap<K, V>, _: &mut Context<Self>) -> Self::Result {
         self.0.get(&msg.key).cloned()
     }
 }
@@ -627,8 +689,15 @@ pub fn get<K, V>(k: K) -> Get<K, V> {
     }
 }
 
-pub fn get_multimap<K, V>(k: K) -> GetMultiMap<K, V> {
-    GetMultiMap {
+pub fn get_btreemultimap<K, V>(k: K) -> GetBTreeMultiMap<K, V> {
+    GetBTreeMultiMap {
+        key: k,
+        value: PhantomData,
+    }
+}
+
+pub fn get_hashmultimap<K, V>(k: K) -> GetHashMultiMap<K, V> {
+    GetHashMultiMap {
         key: k,
         value: PhantomData,
     }
